@@ -1,0 +1,16 @@
+ShowCaseStandalone
+Original project: https://github.com/kellerkindt/ShowCaseStandalone
+Maintained fork: https://github.com/tommy10606/ShowCaseStandalone
+Upstream revision: 2e123063f7c3dd99178c8f26f2490d9a9e763c7d (2020-11-25).
+Original authors: kellerkindt, sorklin, bitfreeze, Ryzko, rtainc.
+Additional original contributors remain credited in the source.
+
+Modified by Tommy10606 on 2026-10-18.
+Version 3.0.1 targets Paper 26.3 build 205 and removes legacy sign-data lookups.
+Includes startup-only GitHub release checks for the maintained fork.
+Other changes are documented in CHANGELOG.md.
+
+Licensed under GNU GPL version 3 or, at your option, any later version.
+Original copyright and warranty notices are retained in the source and LICENSE.
+Third-party compile-only libraries retain their own licenses and are not
+included in the compiled plugin JAR.

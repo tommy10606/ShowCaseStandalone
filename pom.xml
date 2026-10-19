@@ -1,300 +1,36 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kellerkindt</groupId>
   <artifactId>ShowCaseStandalone</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>3.0.1</version>
   <name>ShowCaseStandalone</name>
-  <description>Plugin for Bukkits Minecraft Api</description>
-  
-  
+  <description>ShowCaseStandalone maintained for Paper 26.3 by Tommy10606.</description>
+  <licenses><license><name>GNU General Public License v3 or later</name><url>https://www.gnu.org/licenses/gpl-3.0.html</url><distribution>repo</distribution></license></licenses>
   <properties>
-      <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
-      
-      <build.number>${maven.build.timestamp}-custom</build.number>
-      <build.date>${maven.build.timestamp}</build.date>
-      <build.builder>UNKNOWN</build.builder>
-      
-      
-      <repository.url.host>https://dl.tallbyte.com/</repository.url.host>
-      <repository.url.path>pub/mvn/</repository.url.path>
-      <repository.url>${repository.url.host}${repository.url.path}</repository.url>
-
-      <version.java.source>1.8</version.java.source>
-      <version.java.output>1.8</version.java.output>
+    <maven.compiler.release>25</maven.compiler.release>
+    <mockito.version>5.20.0</mockito.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <paper.version>26.3.build.205-stable</paper.version>
+    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
   </properties>
-  
-  
-  
-  <build>
-    <sourceDirectory>src</sourceDirectory>
-    <resources>
-      <resource>
-        <directory>src</directory>
-        <includes>
-            <include>**/*.java</include>
-            <include>*.yml</include>
-        </includes>
-      </resource>
-      <resource>
-        <directory>lib</directory>
-        <excludes>
-          <exclude>**/*.java</exclude>
-          <exclude>**/*.jar</exclude>
-        </excludes>
-      </resource>
-    </resources>
-    <plugins>
-
-        <!-- compiler -->
-        <plugin>
-            <!-- Using the eclipse compiler allows for different source and target,
-                which is a good thing (outweighing that this is a rarely used combination,
-                and most people use javac) This should also allow us to run maven builds
-                on a JRE and not a JDK. -->
-
-            <!-- Note that initial experiments with an earlier version of maven-compiler-plugin
-                showed that the eclipse compiler bundled with that gave incorrect lines in
-                the debug information. By using a newer version of the plexus-compiler-eclipse
-                plugin this is hopefully less of an issue. If not we must also bundle a newer
-                version of the eclipse compiler itself. -->
-
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.1</version>
-            <configuration>
-                <source>${version.java.source}</source>
-                <target>${version.java.source}</target>
-                <debug>true</debug>
-                <optimize>true</optimize>
-                <fork>true</fork>
-                <compilerId>eclipse</compilerId>
-            </configuration>
-            <dependencies>
-                <dependency>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-compiler-eclipse</artifactId>
-                    <version>2.6</version>
-                </dependency>
-            </dependencies>
-        </plugin>
-
-        <!-- port it to an older java version (android -> java 1.6 / 1.7) -->
-        <plugin>
-            <groupId>net.orfjackal.retrolambda</groupId>
-            <artifactId>retrolambda-maven-plugin</artifactId>
-            <version>2.0.6</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>process-main</goal>
-                        <goal>process-test</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <target>${version.java.output}</target>
-                <fork>false</fork>
-            </configuration>
-        </plugin>
-
-
-        <!-- packager (needed to add data to the manifest) -->
-      <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <configuration>
-              <archive>
-                  <manifestEntries>
-                      <buildNumber>${build.number}</buildNumber>
-                      <buildDate>${build.date}</buildDate>
-                      <builder>${build.builder}</builder>
-                  </manifestEntries>
-              </archive>
-          </configuration>
-      </plugin>
-      
-      <!-- replacer that updates the version number in the plugin.yml -->
-      <plugin>
-          <groupId>com.google.code.maven-replacer-plugin</groupId>
-          <artifactId>replacer</artifactId>
-          <version>1.5.3</version>
-          <executions>
-              <execution>
-                  <phase>prepare-package</phase>
-                  <goals>
-                      <goal>replace</goal>
-                  </goals>
-              </execution>
-          </executions>
-          <configuration>
-              <file>${project.basedir}/target/classes/plugin.yml</file>
-              <replacements>
-                  <replacement>
-                      <token>version: 0</token>
-                      <value>version: ${build.number}</value>
-                  </replacement>
-                  
-                  <replacement>
-                      <token>build-date: unknown</token>
-                      <value>build-date: ${build.date}</value>
-                  </replacement>
-                  
-                  <replacement>
-                      <token>builder: unknown</token>
-                      <value>builder: ${build.builder}</value>
-                  </replacement>
-              </replacements>
-              
-              <regexFlags>
-                  <regex>MULTILINE</regex>
-              </regexFlags>
-          </configuration>
-      </plugin>
-      
-      
-      <!-- disable the doclint, which requires valid javadoc parameters everywhere -->
-      <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <executions>
-              <execution>
-                  <id>attach-javadocs</id>
-                  <goals>
-                      <goal>jar</goal>
-                  </goals>
-                  <configuration>
-                      <additionalparam>-Xdoclint:none</additionalparam>
-                      <additionalOptions>-Xdoclint:none</additionalOptions>
-                      <additionalJOption>-Xdoclint:none</additionalJOption>
-                  </configuration>
-              </execution>
-          </executions>
-      </plugin>
-      
-      
-      
-      <!-- copy metrics into this jar -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>2.3</version>
-            <configuration>
-                <artifactSet>
-                    <includes>
-                        <include>org.mcstats.bukkit:*</include>
-                    </includes>
-                </artifactSet>
-            </configuration>
-            <executions>
-                <execution>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>shade</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-      
-    </plugins>
-  </build>
-  
   <repositories>
-      <repository>
-          <id>spigot-repo</id>
-          <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-      </repository>
-
-      <!-- getting HTTP 500
-      <repository>
-          <id>Plugin Metrics</id>
-          <url>http://repo.mcstats.org/content/repositories/public</url>
-      </repository>
-      -->
-      
-      <!-- essentials -->
-      <repository>
-          <id>ess-repo</id>
-          <url>http://repo.ess3.net/content/groups/essentials/</url>
-      </repository>
-
-      <!-- Vault -->
-      <repository>
-          <id>Vault</id>
-          <url>http://nexus.hc.to/content/repositories/pub_releases</url>
-      </repository>
-      
-      <!-- WorldEdit / WorldGuard and many more -->
-
-      <repository>
-          <id>sk89q</id>
-          <url>http://maven.sk89q.com/repo/</url>
-      </repository>
-
-
+    <repository><id>papermc</id><url>https://repo.papermc.io/repository/maven-public/</url></repository>
+    <repository><id>essentialsx</id><url>https://repo.essentialsx.net/releases/</url></repository>
+    <repository><id>jitpack</id><url>https://jitpack.io</url></repository>
+    <repository><id>enginehub</id><url>https://maven.enginehub.org/repo/</url></repository>
   </repositories>
-  
   <dependencies>
+    <dependency><groupId>io.papermc.paper</groupId><artifactId>paper-api</artifactId><version>${paper.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>net.essentialsx</groupId><artifactId>EssentialsX</artifactId><version>2.21.2</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>com.github.MilkBowl</groupId><artifactId>VaultAPI</artifactId><version>1.7</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>com.sk89q.worldedit</groupId><artifactId>worldedit-bukkit</artifactId><version>7.3.16</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>com.sk89q.worldedit</groupId><artifactId>worldedit-core</artifactId><version>7.3.16</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>com.sk89q.worldguard</groupId><artifactId>worldguard-bukkit</artifactId><version>7.0.15</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>com.sk89q.worldguard</groupId><artifactId>worldguard-core</artifactId><version>7.0.15</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>org.mockbukkit.mockbukkit</groupId><artifactId>mockbukkit-v26.3</artifactId><version>4.118.0</version><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>6.1.3</version><scope>test</scope></dependency>
+    <dependency><groupId>org.mockito</groupId><artifactId>mockito-core</artifactId><version>${mockito.version}</version><scope>test</scope></dependency>
 
-      
-      <!-- BUKKIT -->
-      <dependency>
-          <groupId>org.bukkit</groupId>
-          <artifactId>bukkit</artifactId>
-          <version>1.14.2-R0.1-SNAPSHOT</version>
-      </dependency>
-      
-      <!-- mcstats / metrics -->
-      <dependency>
-          <groupId>org.mcstats.bukkit</groupId>
-          <artifactId>metrics</artifactId>
-          <version>R8-SNAPSHOT</version>
-          <!-- <scope>compile</scope> -->
-      </dependency>
-      
-      <!-- essentials -->
-      <dependency>
-          <groupId>net.ess3</groupId>
-          <artifactId>Essentials</artifactId>
-          <version>2.14-SNAPSHOT</version>
-          <scope>provided</scope>
-      </dependency>
-
-      <!-- Vault -->
-      <dependency>
-          <groupId>net.milkbowl.vault</groupId>
-          <artifactId>VaultAPI</artifactId>
-          <scope>provided</scope>
-          <version>1.7</version>
-      </dependency>
-      
-      <!-- WorldEdit -->
-      <dependency>
-          <groupId>com.sk89q.worldedit</groupId>
-          <artifactId>worldedit-bukkit</artifactId>
-          <scope>provided</scope>
-          <version>7.0.0-SNAPSHOT</version>
-      </dependency>
-      
-      <!-- WorldGuard -->
-      <!-- having unresolvable dependencies
-      <dependency>
-          <groupId>com.sk89q.worldguard</groupId>
-          <artifactId>worldguard-legacy</artifactId>
-          <scope>provided</scope>
-          <version>7.0.0-SNAPSHOT</version>
-      </dependency>
-      -->
-
-
-      
-      
-      <!-- local -->
-      <dependency>
-          <groupId>com.sk89q.worldguard</groupId>
-          <artifactId>worldguard-legacy</artifactId>
-          <version>UNKNOWN</version>
-          <scope>system</scope>
-          <systemPath>${project.basedir}/lib/worldguard-legacy-7.0.0-beta-03.jar</systemPath>
-      </dependency>
 
       <dependency>
           <groupId>me.minebuilders</groupId>
@@ -394,44 +130,19 @@
           <systemPath>${project.basedir}/lib/FBasics_2.1.3.jar</systemPath>
       </dependency>
       
+  
   </dependencies>
-  
-  <profiles>
-    <profile>
-       <id>upstream</id>
-       <repositories>
-          <repository>
-             <id>upstream</id>
-             <url>${env.Jenkins.Repository}</url>
-             <releases>
-                 <enabled>true</enabled>
-             </releases>
-             <snapshots>
-                <enabled>true</enabled>
-             </snapshots>
-          </repository>
-        </repositories>
-     <pluginRepositories>
-        <pluginRepository>
-              <id>upstream</id>
-              <url>${env.Jenkins.Repository}</url>
-              <releases>
-                <enabled>true</enabled>
-              </releases>
-              <snapshots>
-                <enabled>true</enabled>
-             </snapshots>
-        </pluginRepository>
-      </pluginRepositories>
-    </profile>
-  </profiles>
-  
-  
-  <distributionManagement>
-          <repository>
-             <id>tallbyte-repository</id>
-             <url>${repository.url}</url>
-          </repository>
-  </distributionManagement>
-
+  <build>
+    <sourceDirectory>src</sourceDirectory><testSourceDirectory>tests</testSourceDirectory>
+    <finalName>ShowCaseStandalone-${project.version}</finalName>
+    <resources>
+      <resource><directory>src</directory><filtering>true</filtering><includes><include>*.yml</include></includes></resource>
+      <resource><directory>${project.basedir}</directory><includes><include>LICENSE</include><include>NOTICE</include></includes></resource>
+    </resources>
+    <plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.0</version><configuration><showWarnings>true</showWarnings></configuration></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version><configuration><argLine>-javaagent:"${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar"</argLine></configuration></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version></plugin>
+    </plugins>
+  </build>
 </project>
