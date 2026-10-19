@@ -18,7 +18,6 @@
 
 package com.kellerkindt.scs.utilities;
 
-import org.apache.commons.lang.WordUtils;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 

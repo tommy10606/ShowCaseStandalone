@@ -18,6 +18,7 @@
 package com.kellerkindt.scs.balance;
 
 import com.earth2me.essentials.Essentials;
+import net.ess3.api.MaxMoneyException;
 import com.earth2me.essentials.api.Economy;
 import com.earth2me.essentials.api.NoLoanPermittedException;
 import com.earth2me.essentials.api.UserDoesNotExistException;
@@ -69,7 +70,7 @@ public class EssentialsBalance extends NameBasedBalance implements Balance {
             return false;
         } catch (UserDoesNotExistException e) {
             return false;
-        } catch (NoLoanPermittedException e) {
+        } catch (NoLoanPermittedException | MaxMoneyException e) {
             return false;
         }
     }
@@ -85,7 +86,7 @@ public class EssentialsBalance extends NameBasedBalance implements Balance {
             return false;
         } catch (UserDoesNotExistException e) {
             return false;
-        } catch (NoLoanPermittedException e) {
+        } catch (NoLoanPermittedException | MaxMoneyException e) {
             return false;
         }
     }

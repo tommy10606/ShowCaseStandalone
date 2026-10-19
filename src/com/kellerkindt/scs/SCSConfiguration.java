@@ -29,6 +29,8 @@ import java.util.*;
  */
 public class SCSConfiguration extends Configuration {
     
+    public static final String KEY_UPDATE_CHECKER_ENABLED   = "update-checker.enabled";
+
     public static final String KEY_DEFAULTUNIT              = "Default.Unit";
     public static final String KEY_DEFAULTSHOWTRANSMESSG    = "Default.ShowTransactionMessages";
     public static final String KEY_DEFAULTSHOWTRANSMESSGUN  = "Default.ShowTransactionMessagesOnUnlimited";
@@ -123,6 +125,11 @@ public class SCSConfiguration extends Configuration {
         }
     }
     
+    /** Whether to check published GitHub releases once after startup. */
+    public boolean isUpdateCheckerEnabled() {
+        return getForced(KEY_UPDATE_CHECKER_ENABLED, true);
+    }
+
     public boolean getResidenceHookInto () {
         return getForced(KEY_RESIDENCE_HOOK, true);
     }
@@ -303,9 +310,9 @@ public class SCSConfiguration extends Configuration {
                 Material.OAK_LEAVES.toString(),
                 Material.SPRUCE_LEAVES.toString(),
                 Material.COBWEB.toString(),
-                Material.GRASS.toString(),
+                Material.SHORT_GRASS.toString(),
                 Material.GRASS_BLOCK.toString(),
-                Material.GRASS_PATH.toString(),
+                Material.DIRT_PATH.toString(),
                 Material.TALL_GRASS.toString(),
                 Material.SEAGRASS.toString(),
                 Material.TALL_SEAGRASS.toString(),

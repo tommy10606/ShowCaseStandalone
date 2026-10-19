@@ -983,7 +983,7 @@ public abstract class Shop<T extends Shop<?>> extends SimpleChangeable<T> implem
             list.add(Term.INFO_SHOP_ENCHANTMENTS.get(MaterialNames.getItemName(getItemStack())));
             for (Map.Entry<Enchantment, Integer> entry : getItemStack().getEnchantments().entrySet()) {
                 list.add(Term.INFO_SHOP_ENCHANTMENT.get(
-                        entry.getKey().getName(),
+                        entry.getKey().getKey().getKey().toUpperCase(Locale.ROOT),
                         ""+entry.getValue()
                 ));
             }

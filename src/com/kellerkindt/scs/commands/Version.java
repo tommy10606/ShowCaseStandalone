@@ -45,7 +45,7 @@ public class Version extends SimpleCommand {
     public void execute(CommandSender sender, String[] args) throws CommandException {
         scs.sendMessage(sender, Term.MESSAGE_VERSION_1.get());
         scs.sendMessage(sender, Term.MESSAGE_VERSION_2.get(scs.getDescription().getVersion()));
-        scs.sendMessage(sender, Term.MESSAGE_VERSION_4.get(Properties.BUILD_AUTHOR));
+        scs.sendMessage(sender, Term.MESSAGE_VERSION_4.get(String.join(", ", scs.getDescription().getAuthors())));
         scs.sendMessage(sender, Term.MESSAGE_VERSION_5.get(Properties.BUILD_CONTRIBUTOR));
         
         if (scs.isAdmin(sender) && Properties.BUILD_ISDEV) {

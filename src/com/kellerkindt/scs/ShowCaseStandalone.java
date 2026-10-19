@@ -51,7 +51,7 @@ import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.mcstats.Metrics;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,8 +70,6 @@ public class ShowCaseStandalone extends JavaPlugin {
     private Permission  permission         = null;
     private Balance     balance            = null;
 
-    private Metrics                 metrics         = null;
-    private MetricsHandler          metricsHandler  = null;
     private ShopHandler             shopHandler     = null;
     private PlayerSessionHandler    sessionHandler  = null;
     private PriceRangeHandler       priceHandler    = null;
@@ -80,6 +78,8 @@ public class ShowCaseStandalone extends JavaPlugin {
 
     private SCSConfiguration    config            = null;
     private Logger              logger;
+    private BukkitTask          updateTask;
+    private volatile boolean    stopping;
     
     private Map<Class<? extends Shop>, String>    createPerms     = new HashMap<Class<? extends Shop>, String>();
     private Map<Class<? extends Shop>, Double>    createCosts        = new HashMap<Class<? extends Shop>, Double>();
@@ -91,6 +91,7 @@ public class ShowCaseStandalone extends JavaPlugin {
     
     @Override
     public void onDisable() {
+        stopUpdateCheck();
         try {
             // stop changes from being happening
             logger.info("Stopping StorageHandlers");
@@ -109,13 +110,14 @@ public class ShowCaseStandalone extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        stopping = false;
         // static setups
         scs         = this;
         startup     = new Date();
         warnings    = new HashMap<Date, String>();
 
         logger = getLogger();
-        logger.info("Starting b"+getDescription().getVersion()+", created by "+Properties.BUILD_AUTHOR +" with great contribution by "+Properties.BUILD_CONTRIBUTOR);
+        logger.info("Starting v"+getDescription().getVersion()+", created by "+Properties.BUILD_AUTHOR +" with great contribution by "+Properties.BUILD_CONTRIBUTOR);
         
         // load the configuration
         logger.info("Loading configuration.");
@@ -265,34 +267,6 @@ public class ShowCaseStandalone extends JavaPlugin {
 
         
 
-        try {
-            logger.info("Initilazing Metrics");
-            // init metrics
-            this.metrics    = new Metrics(this);
-            
-            // does the server owner want to use this?
-            if (!metrics.isOptOut()) {
-                
-                // init handler
-                this.metricsHandler = new MetricsHandler(shopHandler, metrics);
-                
-                // add listener
-                registerEvents(metricsHandler);
-                
-                // start metrics
-                this.metrics.start();
-                
-                logger.info("Metrics successfully initialized");
-            } else {
-                logger.info("Metrics is deactivated, ShowCaseStandalone respects your decision and won't use Metrics");
-            }
-        
-        } catch (IOException ioe) {
-            logger.log(Level.WARNING, "Couldn't activate metrics. This won't affect the functionality of "+getDescription().getName(), ioe);
-        }
-        
-
-
         if (Properties.BUILD_ISDEV) {
             // just to be sure, give a warning that this isn't a stable build
             Messaging.send(getServer().getConsoleSender(), Term.WARNING_DEV_VERSION.get());
@@ -300,8 +274,43 @@ public class ShowCaseStandalone extends JavaPlugin {
         
         // done
         logger.info("Enabled");
+        startUpdateCheck();
     }
     
+    void startUpdateCheck() {
+        if (!getConfiguration().isUpdateCheckerEnabled() || updateTask != null) return;
+        // HTTP never runs on the game thread and is attempted only once per enable.
+        updateTask = getServer().getScheduler().runTaskLaterAsynchronously(this, this::checkForUpdates, 20L);
+    }
+
+    void stopUpdateCheck() {
+        stopping = true;
+        if (updateTask != null) {
+            updateTask.cancel();
+            updateTask = null;
+        }
+    }
+
+    private void checkForUpdates() {
+        if (stopping) return;
+        try {
+            var result = new ReleaseChecker().check(getPluginMeta().getVersion());
+            if (stopping) return;
+            if (result.latestTag() == null) {
+                getLogger().info("No published stable GitHub release found; update status is unknown.");
+            } else if (result.updateAvailable()) {
+                getLogger().info("Update Available!");
+                getLogger().info("Running v" + getPluginMeta().getVersion() + "; latest "
+                        + result.latestTag() + ". Download: " + ReleaseChecker.RELEASES_URL);
+            } else {
+                getLogger().info("Running the most up to date version.");
+            }
+        } catch (IOException error) {
+            if (!stopping) getLogger().warning("Update check unavailable: " + error.getMessage()
+                    + ". Shops are unaffected; will check again on the next server boot.");
+        }
+    }
+
     /**
      * @param listener  {@link Listener} to register
      */

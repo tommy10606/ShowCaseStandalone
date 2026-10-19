@@ -19,7 +19,6 @@ package com.kellerkindt.scs.listeners;
 
 
 import java.util.*;
-import java.util.concurrent.Callable;
 
 import com.kellerkindt.scs.events.*;
 import org.bukkit.Location;
@@ -27,6 +26,10 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
+import org.bukkit.Tag;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -60,9 +63,12 @@ public class SignListener implements Listener {
 
 
         // block needs to be a sign
-        if (block.getState() instanceof Sign) {
+        if (block != null && block.getState() instanceof Sign) {
             Sign  sign   = (Sign)block.getState();
             Block behind = Utilities.getBlockBehind(sign);
+            if (behind == null) {
+                return;
+            }
             Shop  shop   = scs.getShopHandler().getShop(behind);
 
             if (shop != null) {
@@ -102,16 +108,13 @@ public class SignListener implements Listener {
 
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onShowCaseInteractEvent (ShowCaseInteractEvent event) {
-        if (event.getPlayer().getItemInHand() != null) {
-            // TODO string compare...
-            if (event.getPlayer().getItemInHand().getType().toString().toLowerCase().contains("_sign") && event.hasRightClicked()) {
-                // cancel the event and allow a player to place the sign
-                event.setCancelled(true);
-            }
+        if (Tag.SIGNS.isTagged(event.getPlayer().getInventory().getItemInMainHand().getType())
+                && event.hasRightClicked()) {
+            event.setCancelled(true);
         }
     }
     
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onSignChanged (SignChangeEvent event) {
         
         if (!(event.getBlock().getState() instanceof Sign)) {
@@ -122,6 +125,9 @@ public class SignListener implements Listener {
         // get the block information
         Sign    sign    = (Sign)event.getBlock().getState();
         Block    behind    = Utilities.getBlockBehind(sign);
+        if (behind == null || event.getSide() != Side.FRONT) {
+            return;
+        }
             
         // get shop
         final Shop        fShop     = scs.getShopHandler().getShop(behind);
@@ -137,16 +143,8 @@ public class SignListener implements Listener {
          * because the Sign is not available
          * at this moment
          */
-        scs.getServer().getScheduler().callSyncMethod(scs, new Callable<Void>() {
-
-            @Override
-            public Void call() throws Exception {
-                // call the event to format the sign
-                updateSign(fShop);
-                
-                return null;
-            }
-        });
+        // Run after vanilla has applied the text, rather than updating a stale snapshot.
+        scs.getServer().getScheduler().runTask(scs, () -> updateSign(fShop));
         
     }
 
@@ -211,10 +209,12 @@ public class SignListener implements Listener {
             owner = shop.getOwnerId().toString();
         }
 
-        sign.setLine(0, owner != null ? owner : "");
-        sign.setLine(1, shop.getClass().getSimpleName());
-        sign.setLine(2, shop.isUnlimited() ? Term.SIGN_UNLIMITED.get() : ""+shop.getAmount());
-        sign.setLine(3, Term.SIGN_PRICE.get(""+shop.getPrice()));
+        SignSide front = sign.getSide(Side.FRONT);
+        LegacyComponentSerializer text = LegacyComponentSerializer.legacySection();
+        front.line(0, text.deserialize(owner != null ? owner : ""));
+        front.line(1, text.deserialize(shop.getClass().getSimpleName()));
+        front.line(2, text.deserialize(shop.isUnlimited() ? Term.SIGN_UNLIMITED.get() : ""+shop.getAmount()));
+        front.line(3, text.deserialize(Term.SIGN_PRICE.get(""+shop.getPrice())));
     }
     
     

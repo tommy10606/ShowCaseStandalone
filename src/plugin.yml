@@ -1,8 +1,9 @@
 name: ShowCaseStandalone
 main: com.kellerkindt.scs.ShowCaseStandalone
-authors: [kellerkindt, sorklin, bitfreeze, Ryzko, rtainc]
-version: 0
-api-version: 1.13
+version: '${project.version}'
+authors: [kellerkindt, sorklin, bitfreeze, Ryzko, rtainc, Tommy10606]
+api-version: '26.3'
+website: https://github.com/tommy10606/ShowCaseStandalone
 softdepend:
   - My Worlds
   - Multiverse

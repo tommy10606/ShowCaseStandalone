@@ -26,6 +26,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.BookMeta;
 
 public abstract class ItemStackUtilities {
@@ -39,6 +40,10 @@ public abstract class ItemStackUtilities {
      * @param checkNBT
      * @return
      */
+    private static int getDamage(ItemStack item) {
+        return item.getItemMeta() instanceof Damageable damageable ? damageable.getDamage() : 0;
+    }
+
     public static int countCompatibleItemStacks(Inventory inventory, List<ItemStack> allowedItems, boolean checkNBT) {
         int found = 0;
 
@@ -243,7 +248,7 @@ public abstract class ItemStackUtilities {
             }
 
 
-            return is1.getType().equals(is2.getType()) && is1.getDurability() == is2.getDurability();
+            return is1.getType().equals(is2.getType()) && getDamage(is1) == getDamage(is2);
         }
 
         // TODO: remove comment

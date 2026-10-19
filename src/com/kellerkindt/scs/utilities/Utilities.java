@@ -28,10 +28,12 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.type.WallSign;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.Damageable;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -113,37 +115,37 @@ public class Utilities {
 
 
     /**
-     * Returns MaterialData for log:2,Wool:4 etc
+     * Resolves current material names (including minecraft: namespaced keys).
+     * An optional numeric suffix is supported as damage for damageable items.
+     * Modified 2026-10-18 by Tommy10606; legacy material conversion is not used.
      */
     public static ItemStack getItemStackFromString(String material) throws IOException {
-        String args[] = new String[2];
-        if (material.contains(":")) {
-            args = material.split(":");
-        } else {
-            args[0] = material;
-            args[1] = "0";
-        }
-
         try {
-            Material         m   = Material.matchMaterial(args[0].toUpperCase(), true);
-            SCSConfiguration cfg = ShowCaseStandalone.get().getConfiguration(); // singleton, bad...
-
-            int data   = Integer.parseInt(args[1]);
-            int amount = 0;
-
-
-            if (cfg.isSpawningToMax()) {
-                amount = m.getMaxStackSize();
-            } else {
-                amount = cfg.getSpawnCount();
+            String name = material.trim();
+            int damage = 0;
+            int colon = name.lastIndexOf(':');
+            if (colon >= 0 && name.substring(colon + 1).matches("[0-9]+")) {
+                damage = Integer.parseInt(name.substring(colon + 1));
+                name = name.substring(0, colon);
             }
-
-            // for the books (getHandle().tag...)
-            return new ItemStack(m, amount, (short) data);
-            //            return new ItemStack(m, 1, (short)data);
-            //return new MaterialData (m, (byte)data);
-        } catch (Exception e) {
-            throw new IOException(e);
+            Material type = Material.matchMaterial(name);
+            if (type == null || type.isLegacy() || !type.isItem() || type.isAir()) {
+                throw new IllegalArgumentException("Use a current Minecraft item name: " + name);
+            }
+            SCSConfiguration cfg = ShowCaseStandalone.get().getConfiguration();
+            int amount = cfg.isSpawningToMax() ? type.getMaxStackSize() : cfg.getSpawnCount();
+            ItemStack result = new ItemStack(type, amount);
+            if (damage != 0) {
+                ItemMeta meta = result.getItemMeta();
+                if (!(meta instanceof Damageable damageable)) {
+                    throw new IllegalArgumentException("Numeric material variants are obsolete; use the current item name");
+                }
+                damageable.setDamage(damage);
+                result.setItemMeta(meta);
+            }
+            return result;
+        } catch (Exception ex) {
+            throw new IOException(ex);
         }
     }
 
@@ -181,7 +183,7 @@ public class Utilities {
         } else {
             try {
                 // try to parse the string
-                consumer.accept(Utilities.getItemStackFromString(arg.toUpperCase()));
+                consumer.accept(Utilities.getItemStackFromString(arg));
             } catch (Exception e) {
                 throw new MissingOrIncorrectArgumentException();
             }
@@ -192,9 +194,9 @@ public class Utilities {
         try {
             if (arg.equalsIgnoreCase(ITEM_NAME_ITEM_IN_HAND)) {
                 // get rid of the CraftBukkit version ... causes errors later
-                return new ItemStack(player.getItemInHand());
+                return new ItemStack(player.getInventory().getItemInMainHand());
             } else {
-                return Utilities.getItemStackFromString(arg.toUpperCase());
+                return Utilities.getItemStackFromString(arg);
             }
         } catch (Exception ex) {
             throw new MissingOrIncorrectArgumentException();
@@ -202,52 +204,15 @@ public class Utilities {
     }
 
     /**
-     * From https://github.com/davboecki/SignCodePad/blob/master/de/davboecki/signcodepad/event/SignCreate.java
-     * but changed by kellerkindt
-     *
-     * @param sign The Sign
-     * @return The block where the sign is placed on
+     * Returns the supporting block of a wall sign, or null for other sign types.
+     * Uses BlockData so ordinary sign interactions never initialize CraftLegacy.
+     * Modified 2026-10-18 by Tommy10606 for Paper 26.3.
      */
     public static Block getBlockBehind(Sign sign) {
-        Location signloc = sign.getBlock().getLocation();
-        double   x       = -1;
-        double   y       = signloc.getY();
-        double   z       = -1;
-
-        switch ((int) sign.getRawData()) {
-            //west
-            case 2:
-                x = signloc.getX();
-                z = signloc.getZ() + 1;
-
-                break;
-
-            //east
-            case 3:
-                x = signloc.getX();
-                z = signloc.getZ() - 1;
-
-                break;
-
-            //south
-            case 4:
-                x = signloc.getX() + 1;
-                z = signloc.getZ();
-
-                break;
-
-            //north
-            case 5:
-                x = signloc.getX() - 1;
-                z = signloc.getZ();
-
-                break;
-            default:
-                return null;
-
+        if (sign.getBlockData() instanceof WallSign wallSign) {
+            return sign.getBlock().getRelative(wallSign.getFacing().getOppositeFace());
         }
-
-        return sign.getBlock().getWorld().getBlockAt(new Location(sign.getBlock().getWorld(), x, y, z));
+        return null;
     }
 
 
